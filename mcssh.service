@@ -1,0 +1,19 @@
+# Unit for the the MCSSH Server
+[Unit]
+Description=MCSSH Server
+After=network.target
+
+# Service for the MCSSH Server
+[Service]
+Type=simple
+User=pixelcampus
+WorkingDirectory=/home/pixelcampus/mcssh
+
+# Start the server
+ExecStart=/home/pixelcampus/mcssh/mcssh
+
+# Restart the server
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
