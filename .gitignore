@@ -1,0 +1,14 @@
+.sec
+*.txt
+*.key
+*.key.pub
+keys/
+.messages
+authorized_keys/*
+.env
+
+# Python specific
+*.pyc
+*.pyo
+*.pyd
+__pycache__

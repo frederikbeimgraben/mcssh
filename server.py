@@ -42,6 +42,10 @@ def getAuthorizedKeys() -> Generator[paramiko.PKey, None, None]:
     Read all .pub files from the folder ./authorized_keys
     """
     
+    # If the folder does not exist, create it
+    if not os.path.exists("./authorized_keys"):
+        os.mkdir("./authorized_keys")
+    
     # Get all the files in the folder
     files = os.listdir("./authorized_keys")
     
