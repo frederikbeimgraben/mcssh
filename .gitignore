@@ -12,3 +12,4 @@ authorized_keys/*
 *.pyo
 *.pyd
 __pycache__
+*.service
