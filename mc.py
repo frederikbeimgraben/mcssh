@@ -37,7 +37,7 @@ if not os.path.exists("commands.txt"):
 with open("commands.txt", "r") as f:
     KNOWN_COMMANDS = f.read().split("\n")
 
-def getToken() -> str:
+def get_token() -> str:
     """
     Try to get token from either environment variable or from the file
     .sec
@@ -56,10 +56,35 @@ def getToken() -> str:
             return token
     except FileNotFoundError:
         pass
+    
+def get_host() -> str:
+    """
+    Try to get the host from the environment variable
+    """
+    
+    host = os.environ.get("MCSSH_SERVER")
+    
+    if host is not None:
+        return host
+    
+    raise ValueError("Host not found in environment variable")
+
+def get_port() -> int:
+    """
+    Try to get the port from the environment variable
+    """
+    
+    port = os.environ.get("MCSSH_PORT")
+    
+    if port is not None:
+        return int(port)
+    
+    return 4567
 
 class MinecraftSocket:
     ws: websocket.WebSocketApp
     host: str
+    port: int
     
     latest_message: int = 0
     
@@ -72,8 +97,9 @@ class MinecraftSocket:
     def known_commands(self) -> List[str]:
         return KNOWN_COMMANDS
     
-    def __init__(self, host: str):
-        self.host = host
+    def __init__(self):
+        self.host = get_host()
+        self.port = get_port()
         self.callbacks = []
         
     def get_online_players(self) -> List[str]:
@@ -89,7 +115,7 @@ class MinecraftSocket:
         url = f"http://{self.host}:4567/v1/players"
         
         try:
-            response = requests.get(url, headers={"key": getToken()})
+            response = requests.get(url, headers={"key": get_token()})
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             server.log(f"Error getting online players: {e}")
@@ -199,13 +225,13 @@ class MinecraftSocket:
     
     def start(self):
         # Get the token
-        token = getToken()
+        token = get_token()
         
         # Set the cookie
         cookie = f"x-servertap-key={token}"
         
         # Define the URL
-        url = f"ws://{self.host}:4567/v1/ws/console"
+        url = f"ws://{self.host}:{self.port}/v1/ws/console"
         
         headers = {
             "Cookie": cookie

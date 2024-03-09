@@ -257,10 +257,6 @@ class SSHServer(paramiko.ServerInterface):
         except OSError:
             pass
         
-        if server:
-            with open("log.txt", "ab") as f:
-                f.write(data.encode())
-        
     def mc_callback(self, ws: Any, data: str):
         """
         Callback function to send data to the SSH client
@@ -450,9 +446,6 @@ class SSHServer(paramiko.ServerInterface):
             self.buffer = []
             self.position = 0
             
-            with open("log.txt", "wb") as f:
-                f.write(b"")
-            
             log(f"[*] Cleared log")
         elif ''.join(self.buffer) == "reset":
             # Restart this server
@@ -524,16 +517,6 @@ class SSHServer(paramiko.ServerInterface):
         
         # Clear the screen
         self.send_to_client("\x1b[2J")
-        
-        # with open("log.txt", "rb") as f:
-        #    log = f.read().decode("utf-8").split("\n")
-            
-        # Align at bottom
-        # y = self.height - min(len(log), self.height)
-        # self.send_to_client(f"\x1b[{y};1H")
-        
-        # Send first self.height-1 lines of LOG
-        # self.send_to_client("\n\r".join(log[-(self.height-1):]))
         
         # Send initial prompt
         self.send_to_client(f"\x1b[{self.height};1H> ")
@@ -622,7 +605,7 @@ def get_server_key():
 def main():
     key = get_server_key()
     
-    ws = mc.MinecraftSocket("10.66.66.111")
+    ws = mc.MinecraftSocket()
     
     ws.start()
     
