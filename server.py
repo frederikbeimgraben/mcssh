@@ -22,6 +22,34 @@ logging.basicConfig(level=logging.INFO)
 
 THREADS: List[threading.Thread] = []
 
+def get_host() -> str:
+    """
+    Get the host from the environment variable
+    """
+    
+    # Get the host from the environment variable
+    host = os.environ.get("MCSSH_HOST")
+    
+    # If the host is not set, raise an error
+    if host is not None:
+        return host
+    
+    return "localhost"
+
+def get_port() -> int:
+    """
+    Get the port from the environment variable
+    """
+    
+    # Get the port from the environment variable
+    port = os.environ.get("MCSSH_PORT")
+    
+    # If the port is not set, raise an error
+    if port is not None:
+        return int(port)
+    
+    return 2200
+
 def log(data: str, end: str="\n"):
     """
     Log data to the file
@@ -609,10 +637,12 @@ def main():
     
     ws.start()
     
+    host, port = get_host(), get_port()
+    
     # Create the socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(("", 2200))
+    sock.bind((host, port))
 
     # Start listening for connections
     sock.listen(100)

@@ -44,7 +44,7 @@ def get_token() -> str:
     """
     
     # Try to get the token from the environment variable
-    token = os.environ.get("MCSSH_SECRET")
+    token = os.environ.get("SERVERTAP_SECRET")
     
     if token is not None:
         return token
@@ -62,7 +62,7 @@ def get_host() -> str:
     Try to get the host from the environment variable
     """
     
-    host = os.environ.get("MCSSH_SERVER")
+    host = os.environ.get("SERVERTAP_SERVER")
     
     if host is not None:
         return host
@@ -74,7 +74,7 @@ def get_port() -> int:
     Try to get the port from the environment variable
     """
     
-    port = os.environ.get("MCSSH_PORT")
+    port = os.environ.get("SERVERTAP_PORT")
     
     if port is not None:
         return int(port)

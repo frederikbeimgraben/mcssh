@@ -49,8 +49,11 @@ User=<your-user>
 WorkingDirectory=/path/to/mcssh
 
 # Environment variables
-Environment=MCSSH_SERVER=<your-minecraft-server-ip>
-Environment=MCSSH_PORT=<your-servertap-port> # (default: 4567)
+Environment=SERVERTAP_SERVER=<your-minecraft-server-ip>
+Environment=SERVERTAP_PORT=<your-servertap-port> # (default: 4567)
+Environment=MCSSH_HOST=<your-mcssh-host> # (default: localhost)
+Environment=MCSSH_PORT=<your-mcssh-port> # (default: 2200)
+Environment=SERVERTAP_SECRET=<your-servertap-secret> # (alternative: place in .sec file)
 
 # Start the server
 ExecStart=/path/to/mcssh/.env/bin/python /path/to/mcssh/server.py
