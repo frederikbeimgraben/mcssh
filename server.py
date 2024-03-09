@@ -104,7 +104,7 @@ class SSHServer(paramiko.ServerInterface):
     
     @property
     def lock(self):
-        # Log (for thread safety)
+        # Lock (for thread safety)
         # Return an object that can be entered and exited
         if self._lock is None:
             self._lock = threading.Lock()
