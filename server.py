@@ -7,6 +7,7 @@ Paramiko Server for SSH (Minecraft console via SSH)
 import datetime
 import os
 import threading
+import time
 from typing import Any, Generator, List
 import paramiko
 import socket
@@ -145,6 +146,7 @@ class SSHServer(paramiko.ServerInterface):
         
         return self.filtered_history[1:][self.selected_suffix]
     
+    # Paramiko implementation
     def __init__(self, ws: Any = None):
         self.ws = ws
         self.buffer = []
@@ -155,6 +157,7 @@ class SSHServer(paramiko.ServerInterface):
     def check_channel_request(self, kind, chanid):
         if kind == "session":
             self.channel = paramiko.Channel(chanid)
+            
             return paramiko.OPEN_SUCCEEDED
         return paramiko.OPEN_FAILED_ADMINISTRATIVELY_PROHIBITED
     
@@ -166,6 +169,9 @@ class SSHServer(paramiko.ServerInterface):
         
         # Check if SHA256 of the key is in the authorized keys
         for authorizedKey in authorizedKeys:
+            if len(authorizedKey.get_fingerprint()) == 0:
+                continue
+            
             if key.get_fingerprint() == authorizedKey.get_fingerprint():
                 log(f"[!] Accepted public key: ...{key.get_base64()[-8:]}")
                 return paramiko.AUTH_SUCCESSFUL
@@ -260,18 +266,6 @@ class SSHServer(paramiko.ServerInterface):
         self.send_to_client("\033[J")
         self.send_to_client(self.buffer_str)
     
-    def input_handler(self):
-        while not self.closing:
-            try:
-                data = self.channel.recv(1024).decode()
-                if not data:
-                    break
-                self.buffer_str += data
-                self.redraw_buffer()
-            except Exception as e:
-                log(f'[!] Error while receiving data: {e}')
-                break
-    
     def send_to_client(self, data: str, server: bool=False):
         """
         Send data to the SSH client
@@ -327,6 +321,7 @@ class SSHServer(paramiko.ServerInterface):
     def get_server():
         return "SSH-2.0-OpenSSH_7.6p1 Ubuntu-4ubuntu0.3"
     
+    # Own methods
     def add_history(self, cmd: str):
         if len(self.history) == 1 or self.history[1] != cmd:
             self.history.insert(0, cmd)
@@ -422,6 +417,14 @@ class SSHServer(paramiko.ServerInterface):
         # Join the parts
         return " ".join(parts)
     
+    @property
+    def filtered_history(self):
+        filtered = [cmd for cmd in (self.player_suggestions + self.history + self.ws.known_commands) if cmd.startswith(self.filter)]
+        
+        # Remove duplicates that are next to each other
+        return [self.filter] + [filtered[i] for i in range(len(filtered)) if i == 0 or filtered[i] != filtered[i-1]]
+        
+    
     def redraw_buffer(self):
         # Clear the line
         self.send_to_client("\x1b[2K")
@@ -499,13 +502,6 @@ class SSHServer(paramiko.ServerInterface):
         # clear the line
         self.send_to_client("\x1b[2K")
         
-    @property
-    def filtered_history(self):
-        filtered = [cmd for cmd in (self.player_suggestions + self.history + self.ws.known_commands) if cmd.startswith(self.filter)]
-        
-        # Remove duplicates that are next to each other
-        return [self.filter] + [filtered[i] for i in range(len(filtered)) if i == 0 or filtered[i] != filtered[i-1]]
-        
     def previous_command(self):
         if self.filter == "":
             self.selected = min(len(self.filtered_history) - 1, self.selected + 1)
@@ -549,10 +545,14 @@ class SSHServer(paramiko.ServerInterface):
         # Send initial prompt
         self.send_to_client(f"\x1b[{self.height};1H> ")
         
-        while True:
+        while not self.closing:
             # Receive
             while True:
                 data = self.channel.recv(1)
+                
+                if data == b"":
+                    self.close()
+                    exit(0)
                 
                 try:
                     # Decode utf-8
@@ -664,8 +664,26 @@ def main():
             transport = paramiko.Transport(client)
             transport.add_server_key(key)
             
-            # Start the server
-            transport.start_server(server=server)
+            server_thread = threading.Thread(target=transport.start_server, kwargs={"server": server})
+            server_thread.start()
+            
+            # Watchdog Thread
+            def watchdog():
+                while True:
+                    if not transport.is_active():
+                        server.close()
+                        transport.stop_thread()
+                        server_thread.join()
+                        
+                        log("[*] Stopped connection")
+                        
+                        break
+                    
+                    # wait for 1 second
+                    time.sleep(1)
+                    
+            watchdog_thread = threading.Thread(target=watchdog)
+            watchdog_thread.start()
         except KeyboardInterrupt:
             log("[!] Stopping server ...")
             
