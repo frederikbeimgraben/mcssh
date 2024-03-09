@@ -34,7 +34,7 @@ pip install -r requirements.txt
 
 ### To test:
 ```bash
-./mcssh
+SERVERTAP_SERVER=<...> ./mcssh
 ```
 
 ### Creating a systemd service
